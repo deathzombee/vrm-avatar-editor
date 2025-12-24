@@ -151,7 +151,7 @@ export interface OutputVRMExtension {
   materialProperties: Array<OutputMaterialProperty>;
   meta: OutputVRMMeta;
   secondaryAnimation: OutputSecondaryAnimation;
-  specVersion: string; // TODO: numberかもしれない
+  specVersion: string; // TODO: might be a number
 }
 
 export interface OutputBlendShapeMaster {

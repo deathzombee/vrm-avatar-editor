@@ -27,7 +27,7 @@ import {
   OutputSecondaryAnimation,
 } from "./OutputVRMInterfaces";
 
-// WebGL(OpenGL)マクロ定数
+// WebGL (OpenGL) macro constants
 enum WEBGL_CONST {
   ARRAY_BUFFER = 34962,
   ELEMENT_ARRAY_BUFFER = 34963,
@@ -60,12 +60,12 @@ export default class VRMExporter {
     const springBone = vrm.springBoneManager;
 
     const exporterInfo = {
-      // TODO: データがなくて取得できない
+      // TODO: Unable to retrieve due to lack of data
       generator: "UniGLTF-2.0.0",
       version: "2.0",
     };
 
-    // TODO: とりあえず全部ある想定で進める
+    // TODO: For now, proceed assuming everything exists
     if (!scene) {
       throw new Error("scene is undefined or null");
     } else if (!humanoid) {
@@ -82,7 +82,7 @@ export default class VRMExporter {
       throw new Error("springBone is undefined or null");
     }
 
-    // TODO: name基準で重複除外 これでいいのか？
+    // TODO: Remove duplicates based on name. Is this correct?
     const uniqueMaterials = materials
       .filter(
         (material, index, self) =>
@@ -94,13 +94,13 @@ export default class VRMExporter {
     );
     const icon: VRMImageData | null = vrmMeta.texture
       ? { name: "icon", imageBitmap: vrmMeta.texture.image }
-      : null; // TODO: ない場合もある
+      : null; // TODO: May not exist in some cases
     const images: Array<VRMImageData> = uniqueMaterials
       .filter((material) => material.map)
       .map((material) => {
         if (!material.map) throw new Error(material.name + " map is null");
         return { name: material.name, imageBitmap: material.map.image };
-      }); // TODO: 画像がないMaterialもある
+      }); // TODO: Some materials may not have images
     const outputImages = toOutputImages(images, icon);
     const outputSamplers = toOutputSamplers(outputImages);
     const outputTextures = toOutputTextures(outputImages);
@@ -216,7 +216,7 @@ export default class VRMExporter {
         );
       });
 
-      // TODO: とりあえずundefiendは例外スロー
+      // TODO: For now, throw exception if undefined
       if (!mesh.morphTargetDictionary) {
         throw new Error(mesh.name + " morphTargetDictionary is null");
       }
@@ -252,8 +252,8 @@ export default class VRMExporter {
       }
     });
 
-    // inverseBindMatrices length = 16(matrixの要素数) * 4バイト * ボーン数
-    // TODO: とりあえず数合わせでrootNode以外のBoneのmatrixをいれた
+    // inverseBindMatrices length = 16 (number of matrix elements) * 4 bytes * number of bones
+    // TODO: For now, added matrices of bones other than rootNode to match the count
     meshes.forEach((object) => {
       const mesh = (object.type === VRMObjectType.Group
         ? object.children[0]
@@ -331,7 +331,7 @@ export default class VRMExporter {
 
     const outputSkins = toOutputSkins(meshes, meshDatas, nodeNames);
 
-    // TODO: javascript版の弊害によるエラーなので将来的に実装を変える
+    // TODO: Error due to JavaScript version limitations, will change implementation in the future
     const blendShapeMaster = {
       // @ts-ignore: Unreachable code error
       blendShapeGroups: Object.values(blendShapeProxy._blendShapeGroups).map(
@@ -361,7 +361,7 @@ export default class VRMExporter {
       ),
     };
 
-    // TODO: javascript版の弊害によるエラーなので将来的に実装を変える
+    // TODO: Error due to JavaScript version limitations, will change implementation in the future
     // @ts-ignore: Unreachable code error
     lookAt.firstPerson._firstPersonBoneOffset.z *= -1; // TODO:
     const vrmFirstPerson = {
@@ -422,14 +422,14 @@ export default class VRMExporter {
         ),
       },
       meshAnnotations: lookAt.firstPerson.meshAnnotations.map((annotation) => ({
-        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // TODO: 別の数字のとき何になるか
+        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // TODO: What value for other numbers?
         mesh: outputMeshes
           .map((mesh) => mesh.name)
           .indexOf(
             annotation.mesh.children.length > 0
               ? annotation.mesh.children[0].name
               : annotation.mesh.name
-          ), // TODO: とりあえず対応
+          ), // TODO: Temporary correspondence
       })),
     };
 
@@ -477,7 +477,7 @@ export default class VRMExporter {
         type: MeshDataType.IMAGE,
       });
 
-    /* png画像として書き出しのテスト
+    /* Test for exporting as png image
         images.forEach((image, index) => {
             const fileName = "test"+index.toString()+".png";
             const canvas = document.createElement("canvas");
@@ -509,7 +509,7 @@ export default class VRMExporter {
               ? undefined
               : bufferView.type === MeshDataType.INDEX
               ? WEBGL_CONST.ELEMENT_ARRAY_BUFFER
-              : WEBGL_CONST.ARRAY_BUFFER, // TODO: だいたいこれだったの　Mesh/indicesだけELEMENT...
+              : WEBGL_CONST.ARRAY_BUFFER, // TODO: Mostly this. Only Mesh/indices uses ELEMENT...
         };
         bufferOffset += bufferView.buffer.byteLength;
         if (bufferView.type === MeshDataType.IMAGE) {
@@ -524,7 +524,7 @@ export default class VRMExporter {
     const outputScenes = toOutputScenes(scene, outputNodes);
 
     const outputData: OutputVRM = {
-      accessors: outputAccessors, // buffer数 - 画像数
+      accessors: outputAccessors, // buffer count - image count
       asset: exporterInfo, // TODO:
       buffers: [
         {
@@ -813,7 +813,7 @@ const toOutputMeshes = (
       extras: {
         targetNames: mesh.geometry.userData.targetNames,
       },
-      name: mesh.name, // TODO: なんか違う名前になっている
+      name: mesh.name, // TODO: It's becoming a different name
       primitives: subMeshes.map((subMesh) => {
         const meshTypes = meshDatas.map((data) =>
           data.meshName === mesh.name ? data.type : null
@@ -925,7 +925,7 @@ const toOutputMaterials = (
               scale: [1, 1],
             },
           },
-          index: images.map((image) => image.name).indexOf(material.name), // TODO: ImageDataにいれたMaterial名で対応付け
+          index: images.map((image) => image.name).indexOf(material.name), // TODO: Match using Material name stored in ImageData
           texCoord: 0, // TODO:
         }
       : undefined;
@@ -958,7 +958,7 @@ const toOutputMaterials = (
         : material.alphaTest > 0
         ? "MASK"
         : "OPAQUE",
-      doubleSided: material.side === 2, // 両面描画であれば2になっている
+      doubleSided: material.side === 2, // Becomes 2 if double-sided rendering
       extensions:
         material.type === MaterialType.MeshBasicMaterial
           ? {
@@ -984,8 +984,8 @@ const toOutputImages = (
     .filter((image) => image && image.imageBitmap)
     .map((image) => ({
       bufferView: -1,
-      mimeType: "image/png", // TODO: とりあえずpngをいれた
-      name: image.name, // TODO: 取得できないので仮のテクスチャ名としてマテリアル名を入れた
+      mimeType: "image/png", // TODO: For now, put png
+      name: image.name, // TODO: Unable to retrieve, so put material name as temporary texture name
     }));
 };
 
@@ -993,10 +993,10 @@ const toOutputSamplers = (
   outputImages: Array<OutputImage>
 ): Array<OutputSampler> => {
   return outputImages.map(() => ({
-    magFilter: WEBGL_CONST.LINEAR, // TODO: だいたいこれだった
-    minFilter: WEBGL_CONST.LINEAR, // TODO: だいたいこれだった
-    wrapS: WEBGL_CONST.REPEAT, // TODO: だいたいこれだったからとりあえず直打ちした
-    wrapT: WEBGL_CONST.REPEAT, // TODO: だいたいこれだった
+    magFilter: WEBGL_CONST.LINEAR, // TODO: This was mostly the case
+    minFilter: WEBGL_CONST.LINEAR, // TODO: This was mostly the case
+    wrapS: WEBGL_CONST.REPEAT, // TODO: This was mostly the case, so hardcoded for now
+    wrapT: WEBGL_CONST.REPEAT, // TODO: This was mostly the case
   }));
 };
 
@@ -1004,8 +1004,8 @@ const toOutputTextures = (
   outputImages: Array<OutputImage>
 ): Array<OutputTexture> => {
   return outputImages.map((_, index) => ({
-    sampler: index, // TODO: 全パターンでindexなのか不明
-    source: index, // TODO: 全パターンでindexなのか不明
+    sampler: index, // TODO: Unclear if index is used in all patterns
+    source: index, // TODO: Unclear if index is used in all patterns
   }));
 };
 
@@ -1037,20 +1037,20 @@ const toOutputSecondaryAnimation = (
       springBone.springBoneGroupList[0] &&
       springBone.springBoneGroupList[0].length > 0
         ? springBone.springBoneGroupList.map((group) => ({
-            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // TODO: indexが入っているが4つあるのに対して2つしか入っていない
+            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // TODO: Index is stored, but only 2 entries exist when there are 4
             center: group[0].center
-              ? nodeNames.indexOf(group[0].center.name) // TODO: nullになっていて実際のデータはわからん
+              ? nodeNames.indexOf(group[0].center.name) // TODO: It's null and don't know the actual data
               : -1,
-            colliderGroups: springBone.colliderGroups.map((_, index) => index), // TODO: とりあえずindex
-            dragForce: group[0].dragForce, // TODO: それっぽいやつをいれた
+            colliderGroups: springBone.colliderGroups.map((_, index) => index), // TODO: For now, use index
+            dragForce: group[0].dragForce, // TODO: Put something that seems right
             gravityDir: {
-              x: group[0].gravityDir.x, // TODO: それっぽいやつをいれた
-              y: group[0].gravityDir.y, // TODO: それっぽいやつをいれた
-              z: group[0].gravityDir.z, // TODO: それっぽいやつをいれた
+              x: group[0].gravityDir.x, // TODO: Put something that seems right
+              y: group[0].gravityDir.y, // TODO: Put something that seems right
+              z: group[0].gravityDir.z, // TODO: Put something that seems right
             },
-            gravityPower: group[0].gravityPower, // TODO: それっぽいやつをいれた
-            hitRadius: group[0].radius, // TODO: それっぽいやつをいれた
-            stiffiness: group[0].stiffnessForce, // TODO: それっぽいやつをいれた
+            gravityPower: group[0].gravityPower, // TODO: Put something that seems right
+            hitRadius: group[0].radius, // TODO: Put something that seems right
+            stiffiness: group[0].stiffnessForce, // TODO: Put something that seems right
           }))
         : [
             {
@@ -1067,7 +1067,7 @@ const toOutputSecondaryAnimation = (
               hitRadius: 0.02,
               stiffiness: 1,
             },
-          ], // TODO: 2重に書いてしまった
+          ], // TODO: Wrote it twice
     colliderGroups: springBone.colliderGroups.map((group) => ({
       colliders: [
         {
