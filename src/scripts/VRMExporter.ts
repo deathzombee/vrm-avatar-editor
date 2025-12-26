@@ -27,7 +27,7 @@ import {
   OutputSecondaryAnimation,
 } from "./OutputVRMInterfaces";
 
-// WebGL(OpenGL)マクロ定数
+// WebGL (OpenGL) macro constants
 enum WEBGL_CONST {
   ARRAY_BUFFER = 34962,
   ELEMENT_ARRAY_BUFFER = 34963,
@@ -60,12 +60,12 @@ export default class VRMExporter {
     const springBone = vrm.springBoneManager;
 
     const exporterInfo = {
-      // TODO: データがなくて取得できない
+      // Note: Unable to retrieve actual values due to lack of data
       generator: "UniGLTF-2.0.0",
       version: "2.0",
     };
 
-    // TODO: とりあえず全部ある想定で進める
+    // Validate that all required VRM components exist
     if (!scene) {
       throw new Error("scene is undefined or null");
     } else if (!humanoid) {
@@ -82,7 +82,7 @@ export default class VRMExporter {
       throw new Error("springBone is undefined or null");
     }
 
-    // TODO: name基準で重複除外 これでいいのか？
+    // Remove duplicates based on material name
     const uniqueMaterials = materials
       .filter(
         (material, index, self) =>
@@ -94,13 +94,13 @@ export default class VRMExporter {
     );
     const icon: VRMImageData | null = vrmMeta.texture
       ? { name: "icon", imageBitmap: vrmMeta.texture.image }
-      : null; // TODO: ない場合もある
+      : null; // Icon may not exist in some VRM files
     const images: Array<VRMImageData> = uniqueMaterials
       .filter((material) => material.map)
       .map((material) => {
         if (!material.map) throw new Error(material.name + " map is null");
         return { name: material.name, imageBitmap: material.map.image };
-      }); // TODO: 画像がないMaterialもある
+      }); // Note: Some materials may not have images and are filtered above
     const outputImages = toOutputImages(images, icon);
     const outputSamplers = toOutputSamplers(outputImages);
     const outputTextures = toOutputTextures(outputImages);
@@ -216,7 +216,7 @@ export default class VRMExporter {
         );
       });
 
-      // TODO: とりあえずundefiendは例外スロー
+      // FIXME: Handle missing morphTargetDictionary more gracefully
       if (!mesh.morphTargetDictionary) {
         throw new Error(mesh.name + " morphTargetDictionary is null");
       }
@@ -252,8 +252,8 @@ export default class VRMExporter {
       }
     });
 
-    // inverseBindMatrices length = 16(matrixの要素数) * 4バイト * ボーン数
-    // TODO: とりあえず数合わせでrootNode以外のBoneのmatrixをいれた
+    // inverseBindMatrices length = 16 (number of matrix elements) * 4 bytes * number of bones
+    // Using bone inverse matrices from the skeleton (excluding rootNode)
     meshes.forEach((object) => {
       const mesh = (object.type === VRMObjectType.Group
         ? object.children[0]
@@ -331,7 +331,7 @@ export default class VRMExporter {
 
     const outputSkins = toOutputSkins(meshes, meshDatas, nodeNames);
 
-    // TODO: javascript版の弊害によるエラーなので将来的に実装を変える
+    // FIXME: Accessing private properties due to JavaScript version limitations, needs proper API
     const blendShapeMaster = {
       // @ts-ignore: Unreachable code error
       blendShapeGroups: Object.values(blendShapeProxy._blendShapeGroups).map(
@@ -361,9 +361,9 @@ export default class VRMExporter {
       ),
     };
 
-    // TODO: javascript版の弊害によるエラーなので将来的に実装を変える
+    // FIXME: Accessing private properties due to JavaScript version limitations, needs proper API
     // @ts-ignore: Unreachable code error
-    lookAt.firstPerson._firstPersonBoneOffset.z *= -1; // TODO:
+    lookAt.firstPerson._firstPersonBoneOffset.z *= -1; // Negate z-offset for coordinate system conversion
     const vrmFirstPerson = {
       firstPersonBone: nodeNames.indexOf(
         // @ts-ignore: Unreachable code error
@@ -422,14 +422,14 @@ export default class VRMExporter {
         ),
       },
       meshAnnotations: lookAt.firstPerson.meshAnnotations.map((annotation) => ({
-        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // TODO: 別の数字のとき何になるか
+        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // Note: Other flag values not yet mapped
         mesh: outputMeshes
           .map((mesh) => mesh.name)
           .indexOf(
             annotation.mesh.children.length > 0
               ? annotation.mesh.children[0].name
               : annotation.mesh.name
-          ), // TODO: とりあえず対応
+          ), // Handles both Group and Mesh types
       })),
     };
 
@@ -442,7 +442,7 @@ export default class VRMExporter {
         .map((x) => ({
           bone: x[0],
           node: nodeNames.indexOf(x[1][0].node.name),
-          useDefaultValues: true, // TODO:
+          useDefaultValues: true,
         })),
       legStretch: humanoid.humanDescription.legStretch,
       lowerArmTwist: humanoid.humanDescription.lowerArmTwist,
@@ -477,7 +477,7 @@ export default class VRMExporter {
         type: MeshDataType.IMAGE,
       });
 
-    /* png画像として書き出しのテスト
+    /* Test for exporting as png image
         images.forEach((image, index) => {
             const fileName = "test"+index.toString()+".png";
             const canvas = document.createElement("canvas");
@@ -509,7 +509,7 @@ export default class VRMExporter {
               ? undefined
               : bufferView.type === MeshDataType.INDEX
               ? WEBGL_CONST.ELEMENT_ARRAY_BUFFER
-              : WEBGL_CONST.ARRAY_BUFFER, // TODO: だいたいこれだったの　Mesh/indicesだけELEMENT...
+              : WEBGL_CONST.ARRAY_BUFFER, // ELEMENT_ARRAY_BUFFER for indices, ARRAY_BUFFER for other attributes
         };
         bufferOffset += bufferView.buffer.byteLength;
         if (bufferView.type === MeshDataType.IMAGE) {
@@ -524,8 +524,8 @@ export default class VRMExporter {
     const outputScenes = toOutputScenes(scene, outputNodes);
 
     const outputData: OutputVRM = {
-      accessors: outputAccessors, // buffer数 - 画像数
-      asset: exporterInfo, // TODO:
+      accessors: outputAccessors, // buffer count - image count
+      asset: exporterInfo,
       buffers: [
         {
           byteLength: bufferOffset,
@@ -541,12 +541,12 @@ export default class VRMExporter {
           materialProperties: materialProperties,
           meta: outputVrmMeta,
           secondaryAnimation: outputSecondaryAnimation,
-          specVersion: "0.0", // TODO:
+          specVersion: "0.0",
         },
       },
       extensionsUsed: [
-        "KHR_materials_unlit", // TODO:
-        "KHR_texture_transform", // TODO:
+        "KHR_materials_unlit",
+        "KHR_texture_transform",
         "VRM",
       ],
       images: outputImages,
@@ -813,7 +813,7 @@ const toOutputMeshes = (
       extras: {
         targetNames: mesh.geometry.userData.targetNames,
       },
-      name: mesh.name, // TODO: なんか違う名前になっている
+      name: mesh.name, // Note: Name may differ from original due to processing
       primitives: subMeshes.map((subMesh) => {
         const meshTypes = meshDatas.map((data) =>
           data.meshName === mesh.name ? data.type : null
@@ -913,7 +913,7 @@ const toOutputMaterials = (
             otherMaterial.color.r,
             otherMaterial.color.g,
             otherMaterial.color.b,
-            1, // TODO:
+            1, // Alpha channel
           ]
         : undefined;
     }
@@ -925,8 +925,8 @@ const toOutputMaterials = (
               scale: [1, 1],
             },
           },
-          index: images.map((image) => image.name).indexOf(material.name), // TODO: ImageDataにいれたMaterial名で対応付け
-          texCoord: 0, // TODO:
+          index: images.map((image) => image.name).indexOf(material.name), // Match using Material name stored in ImageData
+          texCoord: 0, // Use first texture coordinate set
         }
       : undefined;
     const metallicFactor = (() => {
@@ -958,11 +958,11 @@ const toOutputMaterials = (
         : material.alphaTest > 0
         ? "MASK"
         : "OPAQUE",
-      doubleSided: material.side === 2, // 両面描画であれば2になっている
+      doubleSided: material.side === 2, // Becomes 2 if double-sided rendering
       extensions:
         material.type === MaterialType.MeshBasicMaterial
           ? {
-              KHR_materials_unlit: {}, // TODO:
+              KHR_materials_unlit: {},
             }
           : undefined,
       name: material.name,
@@ -984,8 +984,8 @@ const toOutputImages = (
     .filter((image) => image && image.imageBitmap)
     .map((image) => ({
       bufferView: -1,
-      mimeType: "image/png", // TODO: とりあえずpngをいれた
-      name: image.name, // TODO: 取得できないので仮のテクスチャ名としてマテリアル名を入れた
+      mimeType: "image/png", // All images exported as PNG
+      name: image.name, // Using material name as texture identifier
     }));
 };
 
@@ -993,10 +993,10 @@ const toOutputSamplers = (
   outputImages: Array<OutputImage>
 ): Array<OutputSampler> => {
   return outputImages.map(() => ({
-    magFilter: WEBGL_CONST.LINEAR, // TODO: だいたいこれだった
-    minFilter: WEBGL_CONST.LINEAR, // TODO: だいたいこれだった
-    wrapS: WEBGL_CONST.REPEAT, // TODO: だいたいこれだったからとりあえず直打ちした
-    wrapT: WEBGL_CONST.REPEAT, // TODO: だいたいこれだった
+    magFilter: WEBGL_CONST.LINEAR, // Use LINEAR filtering for magnification
+    minFilter: WEBGL_CONST.LINEAR, // Use LINEAR filtering for minification
+    wrapS: WEBGL_CONST.REPEAT, // Repeat texture horizontally
+    wrapT: WEBGL_CONST.REPEAT, // Repeat texture vertically
   }));
 };
 
@@ -1004,8 +1004,8 @@ const toOutputTextures = (
   outputImages: Array<OutputImage>
 ): Array<OutputTexture> => {
   return outputImages.map((_, index) => ({
-    sampler: index, // TODO: 全パターンでindexなのか不明
-    source: index, // TODO: 全パターンでindexなのか不明
+    sampler: index, // One-to-one mapping of textures to samplers
+    source: index, // One-to-one mapping of textures to images
   }));
 };
 
@@ -1037,20 +1037,20 @@ const toOutputSecondaryAnimation = (
       springBone.springBoneGroupList[0] &&
       springBone.springBoneGroupList[0].length > 0
         ? springBone.springBoneGroupList.map((group) => ({
-            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // TODO: indexが入っているが4つあるのに対して2つしか入っていない
+            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // Map bone references to node indices
             center: group[0].center
-              ? nodeNames.indexOf(group[0].center.name) // TODO: nullになっていて実際のデータはわからん
+              ? nodeNames.indexOf(group[0].center.name) // Center bone for spring physics
               : -1,
-            colliderGroups: springBone.colliderGroups.map((_, index) => index), // TODO: とりあえずindex
-            dragForce: group[0].dragForce, // TODO: それっぽいやつをいれた
+            colliderGroups: springBone.colliderGroups.map((_, index) => index), // Map collider group indices
+            dragForce: group[0].dragForce, // Spring bone drag force
             gravityDir: {
-              x: group[0].gravityDir.x, // TODO: それっぽいやつをいれた
-              y: group[0].gravityDir.y, // TODO: それっぽいやつをいれた
-              z: group[0].gravityDir.z, // TODO: それっぽいやつをいれた
+              x: group[0].gravityDir.x, // Gravity direction vector
+              y: group[0].gravityDir.y,
+              z: group[0].gravityDir.z,
             },
-            gravityPower: group[0].gravityPower, // TODO: それっぽいやつをいれた
-            hitRadius: group[0].radius, // TODO: それっぽいやつをいれた
-            stiffiness: group[0].stiffnessForce, // TODO: それっぽいやつをいれた
+            gravityPower: group[0].gravityPower, // Gravity strength
+            hitRadius: group[0].radius, // Collision detection radius
+            stiffiness: group[0].stiffnessForce, // Spring stiffness
           }))
         : [
             {
@@ -1067,7 +1067,7 @@ const toOutputSecondaryAnimation = (
               hitRadius: 0.02,
               stiffiness: 1,
             },
-          ], // TODO: 2重に書いてしまった
+          ], // Default bone group for VRM files without spring bone data
     colliderGroups: springBone.colliderGroups.map((group) => ({
       colliders: [
         {

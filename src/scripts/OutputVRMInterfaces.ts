@@ -151,7 +151,7 @@ export interface OutputVRMExtension {
   materialProperties: Array<OutputMaterialProperty>;
   meta: OutputVRMMeta;
   secondaryAnimation: OutputSecondaryAnimation;
-  specVersion: string; // TODO: numberかもしれない
+  specVersion: string; // Note: Specification uses string format, though it contains version numbers
 }
 
 export interface OutputBlendShapeMaster {

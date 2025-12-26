@@ -23,7 +23,7 @@
       </v-btn>
     </v-app-bar>
     <p id="message" class="unselectable">
-      ローカル環境で処理しているため、VRMファイルをサーバーにアップロードしていません。
+      Processing locally, VRM files are not uploaded to the server.
     </p>
     <div id="menu">
       <v-card class="full-height">
@@ -75,9 +75,9 @@
         >
           <div class="white-color unselectable">
             <center>
-              VRMをドラッグ&ドロップ<br /><br />
+              Drag & Drop VRM<br /><br />
               <label class="my-file-button black--text">
-                ファイルを選択
+                Select File
                 <input type="file" @change="onFileChange" accept=".vrm" />
               </label>
             </center>
@@ -299,8 +299,8 @@ export default class Home extends Vue {
 .unselectable {
   user-select: none; /* CSS3 */
   -moz-user-select: none; /* Firefox */
-  -webkit-user-select: none; /* Safari、Chromeなど */
-  -ms-user-select: none; /* IE10以降 */
+  -webkit-user-select: none; /* Safari, Chrome, etc. */
+  -ms-user-select: none; /* IE10 and later */
 }
 .my-file-button input {
   display: none;

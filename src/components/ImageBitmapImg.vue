@@ -28,7 +28,7 @@ export default class ImageBitmapImg extends Vue {
   @Prop()
   public imageBitmap!: ImageBitmap;
 
-  /** マウスカーソルをあわせたときに画像の詳細を表示するか */
+  /** Whether to show image details when hovering with the mouse cursor */
   @Prop({ default: true })
   public showInfo!: boolean;
 
@@ -53,7 +53,7 @@ export default class ImageBitmapImg extends Vue {
 .unselectable {
   user-select: none; /* CSS3 */
   -moz-user-select: none; /* Firefox */
-  -webkit-user-select: none; /* Safari、Chromeなど */
-  -ms-user-select: none; /* IE10以降 */
+  -webkit-user-select: none; /* Safari, Chrome, etc. */
+  -ms-user-select: none; /* IE10 and later */
 }
 </style>
