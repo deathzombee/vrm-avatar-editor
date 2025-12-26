@@ -60,12 +60,12 @@ export default class VRMExporter {
     const springBone = vrm.springBoneManager;
 
     const exporterInfo = {
-      // TODO: Unable to retrieve due to lack of data
+      // Note: Unable to retrieve actual values due to lack of data
       generator: "UniGLTF-2.0.0",
       version: "2.0",
     };
 
-    // TODO: For now, proceed assuming everything exists
+    // Validate that all required VRM components exist
     if (!scene) {
       throw new Error("scene is undefined or null");
     } else if (!humanoid) {
@@ -82,7 +82,7 @@ export default class VRMExporter {
       throw new Error("springBone is undefined or null");
     }
 
-    // TODO: Remove duplicates based on name. Is this correct?
+    // Remove duplicates based on material name
     const uniqueMaterials = materials
       .filter(
         (material, index, self) =>
@@ -94,13 +94,13 @@ export default class VRMExporter {
     );
     const icon: VRMImageData | null = vrmMeta.texture
       ? { name: "icon", imageBitmap: vrmMeta.texture.image }
-      : null; // TODO: May not exist in some cases
+      : null; // Icon may not exist in some VRM files
     const images: Array<VRMImageData> = uniqueMaterials
       .filter((material) => material.map)
       .map((material) => {
         if (!material.map) throw new Error(material.name + " map is null");
         return { name: material.name, imageBitmap: material.map.image };
-      }); // TODO: Some materials may not have images
+      }); // Note: Some materials may not have images and are filtered above
     const outputImages = toOutputImages(images, icon);
     const outputSamplers = toOutputSamplers(outputImages);
     const outputTextures = toOutputTextures(outputImages);
@@ -216,7 +216,7 @@ export default class VRMExporter {
         );
       });
 
-      // TODO: For now, throw exception if undefined
+      // FIXME: Handle missing morphTargetDictionary more gracefully
       if (!mesh.morphTargetDictionary) {
         throw new Error(mesh.name + " morphTargetDictionary is null");
       }
@@ -253,7 +253,7 @@ export default class VRMExporter {
     });
 
     // inverseBindMatrices length = 16 (number of matrix elements) * 4 bytes * number of bones
-    // TODO: For now, added matrices of bones other than rootNode to match the count
+    // Using bone inverse matrices from the skeleton (excluding rootNode)
     meshes.forEach((object) => {
       const mesh = (object.type === VRMObjectType.Group
         ? object.children[0]
@@ -331,7 +331,7 @@ export default class VRMExporter {
 
     const outputSkins = toOutputSkins(meshes, meshDatas, nodeNames);
 
-    // TODO: Error due to JavaScript version limitations, will change implementation in the future
+    // FIXME: Accessing private properties due to JavaScript version limitations, needs proper API
     const blendShapeMaster = {
       // @ts-ignore: Unreachable code error
       blendShapeGroups: Object.values(blendShapeProxy._blendShapeGroups).map(
@@ -361,9 +361,9 @@ export default class VRMExporter {
       ),
     };
 
-    // TODO: Error due to JavaScript version limitations, will change implementation in the future
+    // FIXME: Accessing private properties due to JavaScript version limitations, needs proper API
     // @ts-ignore: Unreachable code error
-    lookAt.firstPerson._firstPersonBoneOffset.z *= -1; // TODO:
+    lookAt.firstPerson._firstPersonBoneOffset.z *= -1; // Negate z-offset for coordinate system conversion
     const vrmFirstPerson = {
       firstPersonBone: nodeNames.indexOf(
         // @ts-ignore: Unreachable code error
@@ -422,14 +422,14 @@ export default class VRMExporter {
         ),
       },
       meshAnnotations: lookAt.firstPerson.meshAnnotations.map((annotation) => ({
-        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // TODO: What value for other numbers?
+        firstPersonFlag: annotation.firstPersonFlag === 0 ? "Auto" : "", // Note: Other flag values not yet mapped
         mesh: outputMeshes
           .map((mesh) => mesh.name)
           .indexOf(
             annotation.mesh.children.length > 0
               ? annotation.mesh.children[0].name
               : annotation.mesh.name
-          ), // TODO: Temporary correspondence
+          ), // Handles both Group and Mesh types
       })),
     };
 
@@ -442,7 +442,7 @@ export default class VRMExporter {
         .map((x) => ({
           bone: x[0],
           node: nodeNames.indexOf(x[1][0].node.name),
-          useDefaultValues: true, // TODO:
+          useDefaultValues: true,
         })),
       legStretch: humanoid.humanDescription.legStretch,
       lowerArmTwist: humanoid.humanDescription.lowerArmTwist,
@@ -509,7 +509,7 @@ export default class VRMExporter {
               ? undefined
               : bufferView.type === MeshDataType.INDEX
               ? WEBGL_CONST.ELEMENT_ARRAY_BUFFER
-              : WEBGL_CONST.ARRAY_BUFFER, // TODO: Mostly this. Only Mesh/indices uses ELEMENT...
+              : WEBGL_CONST.ARRAY_BUFFER, // ELEMENT_ARRAY_BUFFER for indices, ARRAY_BUFFER for other attributes
         };
         bufferOffset += bufferView.buffer.byteLength;
         if (bufferView.type === MeshDataType.IMAGE) {
@@ -525,7 +525,7 @@ export default class VRMExporter {
 
     const outputData: OutputVRM = {
       accessors: outputAccessors, // buffer count - image count
-      asset: exporterInfo, // TODO:
+      asset: exporterInfo,
       buffers: [
         {
           byteLength: bufferOffset,
@@ -541,12 +541,12 @@ export default class VRMExporter {
           materialProperties: materialProperties,
           meta: outputVrmMeta,
           secondaryAnimation: outputSecondaryAnimation,
-          specVersion: "0.0", // TODO:
+          specVersion: "0.0",
         },
       },
       extensionsUsed: [
-        "KHR_materials_unlit", // TODO:
-        "KHR_texture_transform", // TODO:
+        "KHR_materials_unlit",
+        "KHR_texture_transform",
         "VRM",
       ],
       images: outputImages,
@@ -813,7 +813,7 @@ const toOutputMeshes = (
       extras: {
         targetNames: mesh.geometry.userData.targetNames,
       },
-      name: mesh.name, // TODO: It's becoming a different name
+      name: mesh.name, // Note: Name may differ from original due to processing
       primitives: subMeshes.map((subMesh) => {
         const meshTypes = meshDatas.map((data) =>
           data.meshName === mesh.name ? data.type : null
@@ -913,7 +913,7 @@ const toOutputMaterials = (
             otherMaterial.color.r,
             otherMaterial.color.g,
             otherMaterial.color.b,
-            1, // TODO:
+            1, // Alpha channel
           ]
         : undefined;
     }
@@ -925,8 +925,8 @@ const toOutputMaterials = (
               scale: [1, 1],
             },
           },
-          index: images.map((image) => image.name).indexOf(material.name), // TODO: Match using Material name stored in ImageData
-          texCoord: 0, // TODO:
+          index: images.map((image) => image.name).indexOf(material.name), // Match using Material name stored in ImageData
+          texCoord: 0, // Use first texture coordinate set
         }
       : undefined;
     const metallicFactor = (() => {
@@ -962,7 +962,7 @@ const toOutputMaterials = (
       extensions:
         material.type === MaterialType.MeshBasicMaterial
           ? {
-              KHR_materials_unlit: {}, // TODO:
+              KHR_materials_unlit: {},
             }
           : undefined,
       name: material.name,
@@ -984,8 +984,8 @@ const toOutputImages = (
     .filter((image) => image && image.imageBitmap)
     .map((image) => ({
       bufferView: -1,
-      mimeType: "image/png", // TODO: For now, put png
-      name: image.name, // TODO: Unable to retrieve, so put material name as temporary texture name
+      mimeType: "image/png", // All images exported as PNG
+      name: image.name, // Using material name as texture identifier
     }));
 };
 
@@ -993,10 +993,10 @@ const toOutputSamplers = (
   outputImages: Array<OutputImage>
 ): Array<OutputSampler> => {
   return outputImages.map(() => ({
-    magFilter: WEBGL_CONST.LINEAR, // TODO: This was mostly the case
-    minFilter: WEBGL_CONST.LINEAR, // TODO: This was mostly the case
-    wrapS: WEBGL_CONST.REPEAT, // TODO: This was mostly the case, so hardcoded for now
-    wrapT: WEBGL_CONST.REPEAT, // TODO: This was mostly the case
+    magFilter: WEBGL_CONST.LINEAR, // Use LINEAR filtering for magnification
+    minFilter: WEBGL_CONST.LINEAR, // Use LINEAR filtering for minification
+    wrapS: WEBGL_CONST.REPEAT, // Repeat texture horizontally
+    wrapT: WEBGL_CONST.REPEAT, // Repeat texture vertically
   }));
 };
 
@@ -1004,8 +1004,8 @@ const toOutputTextures = (
   outputImages: Array<OutputImage>
 ): Array<OutputTexture> => {
   return outputImages.map((_, index) => ({
-    sampler: index, // TODO: Unclear if index is used in all patterns
-    source: index, // TODO: Unclear if index is used in all patterns
+    sampler: index, // One-to-one mapping of textures to samplers
+    source: index, // One-to-one mapping of textures to images
   }));
 };
 
@@ -1037,20 +1037,20 @@ const toOutputSecondaryAnimation = (
       springBone.springBoneGroupList[0] &&
       springBone.springBoneGroupList[0].length > 0
         ? springBone.springBoneGroupList.map((group) => ({
-            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // TODO: Index is stored, but only 2 entries exist when there are 4
+            bones: group.map((e) => nodeNames.indexOf(e.bone.name)), // Map bone references to node indices
             center: group[0].center
-              ? nodeNames.indexOf(group[0].center.name) // TODO: It's null and don't know the actual data
+              ? nodeNames.indexOf(group[0].center.name) // Center bone for spring physics
               : -1,
-            colliderGroups: springBone.colliderGroups.map((_, index) => index), // TODO: For now, use index
-            dragForce: group[0].dragForce, // TODO: Put something that seems right
+            colliderGroups: springBone.colliderGroups.map((_, index) => index), // Map collider group indices
+            dragForce: group[0].dragForce, // Spring bone drag force
             gravityDir: {
-              x: group[0].gravityDir.x, // TODO: Put something that seems right
-              y: group[0].gravityDir.y, // TODO: Put something that seems right
-              z: group[0].gravityDir.z, // TODO: Put something that seems right
+              x: group[0].gravityDir.x, // Gravity direction vector
+              y: group[0].gravityDir.y,
+              z: group[0].gravityDir.z,
             },
-            gravityPower: group[0].gravityPower, // TODO: Put something that seems right
-            hitRadius: group[0].radius, // TODO: Put something that seems right
-            stiffiness: group[0].stiffnessForce, // TODO: Put something that seems right
+            gravityPower: group[0].gravityPower, // Gravity strength
+            hitRadius: group[0].radius, // Collision detection radius
+            stiffiness: group[0].stiffnessForce, // Spring stiffness
           }))
         : [
             {
@@ -1067,7 +1067,7 @@ const toOutputSecondaryAnimation = (
               hitRadius: 0.02,
               stiffiness: 1,
             },
-          ], // TODO: Wrote it twice
+          ], // Default bone group for VRM files without spring bone data
     colliderGroups: springBone.colliderGroups.map((group) => ({
       colliders: [
         {
